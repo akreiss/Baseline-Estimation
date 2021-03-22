@@ -8,7 +8,7 @@
 ##   alpha_covariates2: Covariates for the baselines on the two data-sets.
 
 ## In the example below, we suppose that the time t is given in hours and that
-## the weight function w cuts of the first and last our
+## the weight function w cuts of the first and last hour.
 
 
 ## Load functions
