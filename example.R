@@ -1,11 +1,15 @@
 ## In this example file it is assumed that you have the following variables
-## available. Thus, this file will not run without errors:
-## covariates1, covariates2: Covariate lists of two data-sets
-## events1, events2: Event lists of the same two data-sets
-## T: End of observation horizons for the two data-sets (we suppose that they
-##    have the same length).
-## alpha_covariates1,
-##   alpha_covariates2: Covariates for the baselines on the two data-sets.
+## available. Examples for these variables are provided in the file
+## example_data.RData. If you load the data-file first, the following code
+## should run without errors.
+## covariates1,       : Two covariate lists each corresponding to one data-set
+##  covariates2 
+## events1,           : The two event lists corresponding to the same two 
+##  events2             data-sets
+## T                  : End of observation horizons for the two data-sets (we
+##                      suppose that they have the same length).
+## alpha_covariates1, : Covariates for the baselines on the two data-sets.
+##  alpha_covariates2
 
 ## In the example below, we suppose that the time t is given in hours and that
 ## the weight function w cuts of the first and last hour.
@@ -14,11 +18,14 @@
 ## Load functions
 source('./functions.R')
 
+## Load Libraries
+library(Matrix)
+
 ################################################################################
 ## Kernel, weight function and their integrals #################################
 ################################################################################
 
-## Kernel used for Nelson estimator
+## Kernel used for Nelson estimator (triangular kernel)
 myK <- function(x) {
   return(pmax(1-abs(x),0))
 }
@@ -45,7 +52,7 @@ myKintegrate <- function(a) {
   return(out)
 }
 
-## Weight function w
+## Weight function w (constant equal to one on the interval [1,T-1])
 myw <- function(t) {
   ind <- which(t>=1 & t<=T-1)
   out <- rep(0,length(t))
@@ -86,15 +93,15 @@ Ksq <- integrate(integral1,lower=0,upper=2)$value
 
 ## Compute Partial Likelihood Estimator Based on data-set 1
 epp1 <- events_per_pair(covariates1,events1)
-beta_cpl_out <- nlm(cpl,runif(2),print.level=2,covariates=covariates1,
+beta_cpl_out <- nlm(cpl,runif(p),print.level=2,covariates=covariates1,
                     events=events1,T=T,epp=epp1)
 beta_cpl <- beta_cpl_out$estimate
 
 ## Compute parametric Estimator based on data-set 1
-param_out <- nlm(cfl,rnorm(length(beta_cpl)+length(alpha_covariates1$covars[[1]])),
-                 print.level=2,iterlim=1000,betadim=2,covariates=covariates1,
-                 alpha_covariates=alpha_covariates1,events=events1,T=T,epp=epp1)
-theta_hat <- param_out$estimate[(length(beta_cpl)+1):(length(beta_cpl)+length(alpha_covariates1$covars[[1]]))]
+param_out <- nlm(cfl,rnorm(p+d),print.level=2,iterlim=1000,betadim=p,
+                 covariates=covariates1,alpha_covariates=alpha_covariates1,
+                 events=events1,T=T,epp=epp1)
+theta_hat <- param_out$estimate[(p+1):(p+d)]
 
 ## Compute Nelson-Aalen Estimator based on data-set 2
 t <- seq(from=0,to=T,length.out=1000)
@@ -112,5 +119,6 @@ legend("topleft",lty=c(1,2),legend=c("NP","P"))
 
 
 ## Compute the test statistic
-baseline_test(alpha_hat_NP,alpha_hat_P,myw,t,events2,covariates2,beta_cpl,myK,h,
-              T,myKintegrate,alpha_covariates2,theta_hat,mywIntegrate,Ksq)
+test <- baseline_test(alpha_hat_NP,alpha_hat_P,myw,t,events2,covariates2,
+              beta_cpl,myK,h,T,myKintegrate,alpha_covariates2,theta_hat,
+              mywIntegrate,Ksq)
